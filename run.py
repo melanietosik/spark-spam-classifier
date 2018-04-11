@@ -1,6 +1,14 @@
+from pyspark import SparkConf, SparkContext
+
 from pyspark.mllib.regression import LabeledPoint
 from pyspark.mllib.feature import HashingTF
 from pyspark.mllib.classification import LogisticRegressionWithSGD
+
+conf = SparkConf().setAppName("spam-classifier")
+sc = SparkContext(conf=conf)
+
+log4j = sc._jvm.org.apache.log4j
+log4j.LogManager.getRootLogger().setLevel(log4j.Level.ERROR)
 
 spam = sc.textFile("spam.txt")
 ham = sc.textFile("ham.txt")
@@ -22,9 +30,17 @@ trainingData.cache()  # Cache since Logistic Regression is an iterative algorith
 # Run Logistic Regression using the SGD algorithm.
 model = LogisticRegressionWithSGD.train(trainingData)
 
-# Test on a positive example (spam) and a negative one (ham). We first apply
-# the same HashingTF feature transformation to get vectors, then apply the model.
-posTest = tf.transform("O M G GET cheap stuff by sending money to ...".split(" "))
-negTest = tf.transform("Hi Dad, I started studying Spark the other ...".split(" "))
-print "Prediction for positive test example: %g" % model.predict(posTest)
-print "Prediction for negative test example: %g" % model.predict(negTest)
+# Test examples
+test = [
+    "O M G GET cheap stuff by sending money",
+    "Hi Dad, how is the family?",
+    "hey what's up, I'm almos there",
+    "Reply 1000 to win a prize of a million dollars",
+    "dude get down here it's urgent",
+    "Wanna go see Star Wars tonight",
+]
+
+# Predict
+for x in test:
+    vec = tf.transform(x.split(" "))
+    print(model.predict(vec), x)
